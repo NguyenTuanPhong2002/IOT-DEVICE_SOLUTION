@@ -1,11 +1,24 @@
 #include <Arduino.h>
-#include <TinyGPSPlus.h>
+#include <BlynkApi.h>
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <BlynkSimpleEsp32.h>
 
 
-TinyGPSPlus gps;
 //define pins
 #define TRIG_PIN 23
 #define ECHO_PIN 22
+#define RELAY_PIN 19
+
+//define Blynk 
+#define BLYNK_TEMPLATE_ID "TMPL6AT63NeLc"
+#define BLYNK_TEMPLATE_NAME "Prjchongngaplutchooto"
+#define BLYNK_AUTH_TOKEN "TmH2tSZtd2HUsr4osmr9Yrn7ejjgZjP9"
+#define SSID "Esp32_lora_990812_ndp_5G"       // replace with your SSID
+#define Password "0919764460ndp"           //replace with your password
+#ifndef BlynkApi_h
+#define BlynkApi_h
+
 // Define function to measure distance
 float measure_distance() {
     // Send a 10us pulse to trigger pin
@@ -33,52 +46,40 @@ float measure_distance() {
 void setup() {
     // Initialize serial communication
     Serial.begin(9600);
-    Serial2.begin(9600);
     delay(3000);
 
     // Set pin modes
     pinMode(TRIG_PIN, OUTPUT);
     pinMode(ECHO_PIN, INPUT);
+    pinMode(RELAY_PIN, OUTPUT);
+
+    //blynk
+    WiFi.begin(SSID, Password);
+    while (WiFi.status() != WL_CONNECTED) {
+     delay(500);
+    Serial.print(".");
+    } 
+    Blynk.begin(BLYNK_AUTH_TOKEN,SSID,Password);
 }
-void updateSerial(){
-  delay(500);
-  while (Serial.available())  {
-    Serial2.write(Serial.read());//Forward what Serial received to Software Serial Port
-  }
-  while (Serial2.available())  {
-    Serial.write(Serial2.read());//Forward what Software Serial received to Serial Port
-  }
-}
-void displayInfo()
-{
-  Serial.print(F("Location: "));
-  if (gps.location.isValid()){
-    Serial.print(gps.location.lat(), 6);
-    Serial.print(F(","));
-    Serial.print(gps.location.lng(), 6);
-  }
-  else
-  {
-    Serial.print(F("INVALID"));
-  }
-}
+
 void loop() {
+    {
+    Blynk.run();
+    }
     // Measure distance and print to serial monitor
     float distance = measure_distance();
     Serial.print("Distance: ");
     Serial.print(distance);
     Serial.println(" cm");
 
-    // Wait for 1 second before measuring again
-    delay(1000);
-
-    //updateSerial();
-    while (Serial2.available() > 0)
-    if (gps.encode(Serial2.read()))
-        displayInfo();
-    if (millis() > 5000 && gps.charsProcessed() < 10)
-    {
-    Serial.println(F("No GPS detected: check wiring."));
-    while (true);
-  }
+    if(distance < 10) {
+        digitalWrite(RELAY_PIN, LOW); // turn on the relay
+        Serial.println("Relay is ON");
+        delay(5000); // wait for a second
+        digitalWrite(RELAY_PIN, HIGH); // turn off the relay
+        Serial.println("Relay is OFF");
+        delay(1000); // wait for a second
+    }
+     // Wait for 1 second before measuring again
+     delay(1000);
 }
