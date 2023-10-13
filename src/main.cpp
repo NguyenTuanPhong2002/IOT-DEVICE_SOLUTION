@@ -1,4 +1,5 @@
 #include <Arduino.h>
+
 #include <BlynkApi.h>
 #include <WiFi.h>
 #include <WiFiClient.h>
@@ -53,7 +54,7 @@ void setup() {
     pinMode(ECHO_PIN, INPUT);
     pinMode(RELAY_PIN, OUTPUT);
 
-    //blynk
+    //blynk app setup
     WiFi.begin(SSID, Password);
     while (WiFi.status() != WL_CONNECTED) {
      delay(500);
@@ -71,7 +72,7 @@ void loop() {
     Serial.print("Distance: ");
     Serial.print(distance);
     Serial.println(" cm");
-
+    Blynk.virtualWrite(V1, distance);
     if(distance < 10) {
         digitalWrite(RELAY_PIN, LOW); // turn on the relay
         Serial.println("Relay is ON");
@@ -82,4 +83,8 @@ void loop() {
     }
      // Wait for 1 second before measuring again
      delay(1000);
+     BLYNK_WRITE(V0) { // Xử lý khi giá trị của nút trên Blynk App thay đổi
+        int relayState = param.asInt();
+        digitalWrite(RELAY_PIN, relayState); // Điều khiển relay dựa trên giá trị của nút trên Blynk App
+     }
 }
